@@ -5,6 +5,8 @@
 * s60sc 2020 - 2023
 */
 
+#include "TelemetryReceiver.hpp"
+
 #include "appGlobals.h"
 
 char camModel[10];
@@ -117,36 +119,39 @@ void setup() {
   logSetup();
   if (!psramFound()) sprintf(startupFailure, "Startup Failure: Need PSRAM to be enabled");
   
-  // prep SD card storage
-  startStorage();
+//   // prep SD card storage
+//   startStorage();
   
-  // Load saved user configuration
-  loadConfig();
+//   // Load saved user configuration
+//   loadConfig();
 
-  // initialise camera
-  prepCam();
+//   // initialise camera
+//   prepCam();
 
-#ifdef DEV_ONLY
-  devSetup();
-#endif
+// #ifdef DEV_ONLY
+//   devSetup();
+// #endif
 
-  // connect wifi or start config AP if router details not available
-  startWifi();
+//   // connect wifi or start config AP if router details not available
+//   startWifi();
 
-  startWebServer();
-  if (strlen(startupFailure)) LOG_ERR("%s", startupFailure);
-  else {
-    // start rest of services
-    startStreamServer();
-    prepSMTP(); 
-    prepPeripherals();
-    prepMic(); 
-    prepRecording();
-    LOG_INF("Camera model %s on board %s ready @ %uMHz", camModel, CAM_BOARD, xclkMhz); 
-    checkMemory();
-  } 
+//   startWebServer();
+//   if (strlen(startupFailure)) LOG_ERR("%s", startupFailure);
+//   else {
+//     // start rest of services
+//     startStreamServer();
+//     prepSMTP(); 
+//     prepPeripherals();
+//     prepMic(); 
+//     prepRecording();
+//     LOG_INF("Camera model %s on board %s ready @ %uMHz", camModel, CAM_BOARD, xclkMhz); 
+//     checkMemory();
+//   }
+
+  initTelemetryReceiver(Serial2);
+  Serial2.begin(115200);
 }
 
 void loop() {
-  vTaskDelete(NULL); // free 8k ram
+    // vTaskDelete(NULL);  // free 8k ram
 }
