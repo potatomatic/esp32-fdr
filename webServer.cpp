@@ -99,11 +99,14 @@ static void displayLog(httpd_req_t *req) {
 
 static esp_err_t indexHandler(httpd_req_t* req) {
   strcpy(inFileName, INDEX_PAGE_PATH);
+  
   // first check if a startup failure needs to be reported
-  if (strlen(startupFailure)) {
-    httpd_resp_set_type(req, "text/html");                        
-    return httpd_resp_send(req, startupFailure, HTTPD_RESP_USE_STRLEN);
+  if (!startupFailure.empty()) 
+  {
+      httpd_resp_set_type(req, "text/html");                        
+      return httpd_resp_send(req, startupFailure.c_str(), HTTPD_RESP_USE_STRLEN);
   }
+
   // Show wifi wizard if not setup, using access point mode  
   if (!fp.exists(INDEX_PAGE_PATH) && WiFi.status() != WL_CONNECTED) {
     // Open a basic wifi setup page

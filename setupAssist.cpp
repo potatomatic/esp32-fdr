@@ -87,8 +87,17 @@ static bool wgetFile(const char* githubURL, const char* filePath, bool restart =
         return false;
       }
     } 
-    if (restart) {
-      if (loadConfig()) doRestart("config file downloaded");
+    if (restart) 
+    {
+        try
+        {
+            loadConfig();
+            doRestart("config file downloaded");
+        }
+        catch (std::exception const& e)
+        {
+            startupFailure = e.what();
+        }
     }
   } 
   return true;
