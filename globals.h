@@ -32,6 +32,8 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 
+#include <string>
+
 // global mandatory app specific functions, in appSpecific.cpp 
 bool appDataFiles();
 void buildAppJsonString(bool filter);
@@ -72,7 +74,7 @@ void initStatus(int cfgGroup, int delayVal);
 void killWebSocket();
 void listBuff(const uint8_t* b, size_t len); 
 bool listDir(const char* fname, char* jsonBuff, size_t jsonBuffLen, const char* extension);
-bool loadConfig();
+void loadConfig();
 void logLine();
 void logPrint(const char *fmtStr, ...);
 void logSetup();
@@ -98,7 +100,7 @@ float smoothSensor(float latestVal, float smoothedVal, float alpha);
 void startFTPtask();
 void startOTAtask();
 void startSecTimer(bool startTimer);
-bool startStorage();
+void startStorage();
 void startWebServer();
 bool startWifi(bool firstcall = true);
 void stopPing();
@@ -190,7 +192,7 @@ extern bool monitorOpen;
 extern const char* defaultPage_html;
 extern const char* otaPage_html;
 extern SemaphoreHandle_t wsSendMutex;
-extern char startupFailure[];
+extern std::string startupFailure;
 
 extern UBaseType_t uxHighWaterMarkArr[];
 

@@ -11,12 +11,15 @@
 
 #include "appGlobals.h"
 
+#include <string>
+
+
 bool dbgVerbose = false;
 bool timeSynchronized = false;
 bool monitorOpen = true;
 bool dataFilesChecked = false;
 // allow any startup failures to be reported via browser for remote devices
-char startupFailure[50] = {0};
+std::string startupFailure;
 
 /************************** Wifi **************************/
 

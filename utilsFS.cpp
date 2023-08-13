@@ -85,47 +85,64 @@ static void listFolder(const char* rootDir) {
   LOG_INF("%s: Total bytes %lld, Used bytes %lld", fsType, (uint64_t)(STORAGE.totalBytes()), (uint64_t)(STORAGE.usedBytes())); 
 }
 
-bool startStorage() {
-  // start required storage device (SD card or flash file system)
-  bool res = false;
+void startStorage() 
+{
+    // start required storage device (SD card or flash file system)
+
 #ifdef INCLUDE_SD  
-  if ((fs::SDMMCFS*)&STORAGE == &SD_MMC) {
-    strcpy(fsType, "SD_MMC");
-    res = prepSD_MMC();
-    if (res) listFolder(DATA_DIR);
-    else sprintf(startupFailure, "Startup Failure: Check SD card inserted");
-    return res; 
-  }
+    if ((fs::SDMMCFS*)&STORAGE == &SD_MMC) 
+    {
+        strcpy(fsType, "SD_MMC");
+        
+        if (prepSD_MMC()) 
+            listFolder(DATA_DIR);
+        else 
+            throw std::runtime_error {"Startup Failure: Check SD card inserted"};
+
+        return;
+    }
 #endif
 
-  // One of SPIFFS or LittleFS
-  if (!strlen(fsType)) {
-#ifdef _SPIFFS_H_
-    if ((fs::SPIFFSFS*)&STORAGE == &SPIFFS) {
-      strcpy(fsType, "SPIFFS");
-      res = SPIFFS.begin(formatIfMountFailed);
+    bool res = false;
+
+    // One of SPIFFS or LittleFS
+    if (!strlen(fsType)) 
+    {
+    #ifdef _SPIFFS_H_
+        if ((fs::SPIFFSFS*)&STORAGE == &SPIFFS) 
+        {
+            strcpy(fsType, "SPIFFS");
+            res = SPIFFS.begin(formatIfMountFailed);
+        }
+    #endif
+    #ifdef _LITTLEFS_H_
+        if ((fs::LittleFSFS*)&STORAGE == &LittleFS) 
+        {
+            strcpy(fsType, "LittleFS");
+            res = LittleFS.begin(formatIfMountFailed);
+            ramLogPrep();
+            // create data folder if not present
+            if (res && !LittleFS.exists(DATA_DIR)) 
+                LittleFS.mkdir(DATA_DIR);
+        }
+    #endif
+        if (res) 
+        {  
+            // list details of files on file system
+            const char* rootDir = !strcmp(fsType, "LittleFS") ? DATA_DIR : "/";
+            listFolder(rootDir);
+        }
+    } 
+    else 
+    {        
+        dataFilesChecked = true; // disable setupAssist as no file system
+        throw std::runtime_error {std::string {"Failed to mount "} + fsType};
     }
-#endif
-#ifdef _LITTLEFS_H_
-    if ((fs::LittleFSFS*)&STORAGE == &LittleFS) {
-      strcpy(fsType, "LittleFS");
-      res = LittleFS.begin(formatIfMountFailed);
-      ramLogPrep();
-      // create data folder if not present
-      if (res && !LittleFS.exists(DATA_DIR)) LittleFS.mkdir(DATA_DIR);
-    }
-#endif
-    if (res) {  
-      // list details of files on file system
-      const char* rootDir = !strcmp(fsType, "LittleFS") ? DATA_DIR : "/";
-      listFolder(rootDir);
-    }
-  } else {
-    sprintf(startupFailure, "Failed to mount %s", fsType);  
-    dataFilesChecked = true; // disable setupAssist as no file system
-  }
-  debugMemory("startStorage");
-  return res;
+
+    debugMemory("startStorage");
+
+    if (!res)
+        throw std::runtime_error {"Startup Failure: startStorage() failed"};
 }
 
 void getOldestDir(char* oldestDir) {

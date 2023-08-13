@@ -426,50 +426,64 @@ static void setDefaults() {
   }
 }
 
-bool loadConfig() {
-  // called on startup
-  LOG_INF("Load config");
-  if (jsonBuff == NULL) {
-    jsonBuff = psramFound() ? (char*)ps_malloc(JSON_BUFF_LEN) : (char*)malloc(JSON_BUFF_LEN); 
-  }
-  char variable[32] = {0,};
-  char value[FILE_NAME_LEN] = {0,};
-  if (loadConfigVect()) {
-    retrieveConfigVal("appId", appId);
-    if (strcmp(appId, APP_NAME)) {
-      // cleanup storage for different app
-      sprintf(startupFailure, "Wrong configs.txt file, expected %s, got %s", APP_NAME, appId);
-      deleteFolderOrFile(DATA_DIR);
-      savePrefs(false);
-      return false;
+void loadConfig() 
+{
+    // called on startup
+    LOG_INF("Load config");
+    if (jsonBuff == NULL) {
+        jsonBuff = psramFound() ? (char*)ps_malloc(JSON_BUFF_LEN) : (char*)malloc(JSON_BUFF_LEN); 
     }
-    loadPrefs(); // overwrites any corresponding entries in config
-    setDefaults();
+    
+    char variable[32] = {0,};
+    char value[FILE_NAME_LEN] = {0,};
+    
+    if (loadConfigVect()) 
+    {
+        retrieveConfigVal("appId", appId);
+        if (strcmp(appId, APP_NAME)) 
+        {
+            // cleanup storage for different app
+            deleteFolderOrFile(DATA_DIR);
+            savePrefs(false);
+            throw std::runtime_error {std::string {"Wrong configs.txt file, expected "} + APP_NAME + ", got " + appId};
+        }
 
-    std::string htmVer("htmVer");
-    if (getKeyPos(htmVer) < 0) {
-      // add following to configs.txt if not present
-      loadVectItem("htmVer~0~99~T~na");
-      loadVectItem("cfgVer~0~99~T~na");
-      loadVectItem("jsVer~0~99~T~na");
-      // re-order vector by key (element 0 in row)
-      std::sort(configs.begin(), configs.end(), [] (
-        const std::vector<std::string> &a, const std::vector<std::string> &b) {
-        return a[0] < b[0];}
-      );
-      updatedVers = true;
+        loadPrefs(); // overwrites any corresponding entries in config
+        setDefaults();
+
+        std::string htmVer("htmVer");
+        if (getKeyPos(htmVer) < 0) 
+        {
+            // add following to configs.txt if not present
+            loadVectItem("htmVer~0~99~T~na");
+            loadVectItem("cfgVer~0~99~T~na");
+            loadVectItem("jsVer~0~99~T~na");
+            // re-order vector by key (element 0 in row)
+            std::sort(configs.begin(), configs.end(), 
+                [] (const std::vector<std::string> &a, const std::vector<std::string> &b) {
+                    return a[0] < b[0];
+                }
+            );
+            updatedVers = true;
+        }
+
+        // load variables from stored config vector
+        while (getNextKeyVal(variable, value)) 
+            updateStatus(variable, value);
+        
+        if (updatedVers) 
+            saveConfigVect();
+        configLoaded = true;
+
+        debugMemory("loadConfig");
+        wakeupResetReason();
     }
-    // load variables from stored config vector
-    while (getNextKeyVal(variable, value)) updateStatus(variable, value);
-    if (updatedVers) saveConfigVect();
-    configLoaded = true;
-    debugMemory("loadConfig");
-    wakeupResetReason();
-    return true;
-  }
-  // no config file
-  loadPrefs(); 
-  setDefaults();
-  while (getNextKeyVal(variable, value)) updateStatus(variable, value);
-  return false;
+    else
+    {
+        // no config file
+        loadPrefs(); 
+        setDefaults();
+        while (getNextKeyVal(variable, value)) 
+            updateStatus(variable, value);
+    }
 }
